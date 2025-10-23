@@ -9,7 +9,7 @@ import carrental.domain.repository.CustomerRepository;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
-import java.time.temporal.ChronoUnit;
+//import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -173,27 +173,27 @@ public class RentalService {
         return true;
     }
 
-    public int calculateRentalDuration(Integer rentalId) {
-        if (rentalId == null || rentalId <= 0) {
-            throw new IllegalArgumentException("Invalid rental ID");
-        }
-
-        Optional<Rental> rental = rentalRepository.findById(rentalId);
-        if (rental.isPresent()) {
-            String startDate = rental.get().getDateStart();
-            String endDate = rental.get().getDateEnd();
-
-            try {
-                LocalDate start = LocalDate.parse(startDate);
-                LocalDate end = LocalDate.parse(endDate);
-                return (int) ChronoUnit.DAYS.between(start, end);
-            } catch (DateTimeParseException e) {
-                throw new IllegalArgumentException("Invalid date format in rental: " + rentalId);
-            }
-        }
-
-        throw new IllegalArgumentException("Rental not found with ID: " + rentalId);
-    }
+//    public int calculateRentalDuration(Integer rentalId) {
+//        if (rentalId == null || rentalId <= 0) {
+//            throw new IllegalArgumentException("Invalid rental ID");
+//        }
+//
+//        Optional<Rental> rental = rentalRepository.findById(rentalId);
+//        if (rental.isPresent()) {
+//            String startDate = rental.get().getDateStart();
+//            String endDate = rental.get().getDateEnd();
+//
+//            try {
+//                LocalDate start = LocalDate.parse(startDate);
+//                LocalDate end = LocalDate.parse(endDate);
+//                return (int) ChronoUnit.DAYS.between(start, end);
+//            } catch (DateTimeParseException e) {
+//                throw new IllegalArgumentException("Invalid date format in rental: " + rentalId);
+//            }
+//        }
+//
+//        throw new IllegalArgumentException("Rental not found with ID: " + rentalId);
+//    }
 
     public boolean isCarAvailableForRental(Integer carId) {
         if (carId == null || carId <= 0) {
