@@ -1,6 +1,10 @@
 package carrental.console;
 
-import carrental.domain.service.*;
+import carrental.domain.service.CarServise;
+import carrental.domain.service.CustomerService;
+import carrental.domain.service.RentalService;
+import carrental.domain.service.ViolationService;
+
 import java.util.Scanner;
 
 public class ConsoleUi {
@@ -10,8 +14,10 @@ public class ConsoleUi {
     private final RentalMenu rentalMenu;
     private final ViolationMenu violationMenu;
 
-    public ConsoleUi(CarService carService, CustomerService customerService,
-                     RentalService rentalService, ViolationService violationService) {
+    public ConsoleUi(CarServise carService,
+                     CustomerService customerService,
+                     RentalService rentalService,
+                     ViolationService violationService) {
         this.scanner = new Scanner(System.in);
         this.carMenu = new CarMenu(scanner, carService);
         this.customerMenu = new CustomerMenu(scanner, customerService);
@@ -20,11 +26,11 @@ public class ConsoleUi {
     }
 
     public void start() {
-        System.out.println("=== Car Rental System ===");
+        displayWelcomeMessage();
 
         while (true) {
             displayMainMenu();
-            String choice = scanner.nextLine();
+            String choice = scanner.nextLine().trim();
 
             switch (choice) {
                 case "1":
@@ -40,21 +46,34 @@ public class ConsoleUi {
                     violationMenu.showMenu();
                     break;
                 case "0":
-                    System.out.println("Goodbye!");
+                    System.out.println("\nThank you for using Car Rental System. Goodbye!");
                     return;
                 default:
                     System.out.println("Invalid choice. Please try again.");
+                    pressEnterToContinue();
             }
         }
     }
 
+    private void displayWelcomeMessage() {
+        System.out.println("==========================================");
+        System.out.println("      CAR RENTAL MANAGEMENT SYSTEM");
+        System.out.println("==========================================");
+        System.out.println("Welcome to the Car Rental Management System!");
+    }
+
     private void displayMainMenu() {
-        System.out.println("\n--- Main Menu ---");
+        System.out.println("\n=== MAIN MENU ===");
         System.out.println("1. Car Management");
         System.out.println("2. Customer Management");
         System.out.println("3. Rental Management");
         System.out.println("4. Violation Management");
         System.out.println("0. Exit");
         System.out.print("Choose an option: ");
+    }
+
+    private void pressEnterToContinue() {
+        System.out.print("Press Enter to continue...");
+        scanner.nextLine();
     }
 }

@@ -14,13 +14,13 @@ public class ConsoleApplication {
         ViolationRepository violationRepository = new InMemoryViolationRepository();
 
         // Initialize services
-        CarService carService = new CarService(carRepository);
+        CarServise carService = new CarServise(carRepository);
         CustomerService customerService = new CustomerService(customerRepository);
         RentalService rentalService = new RentalService(rentalRepository, carRepository, customerRepository);
         ViolationService violationService = new ViolationService(violationRepository, rentalRepository);
 
         // Initialize and start UI
-        ConsoleUI consoleUI = new ConsoleUI(carService, customerService, rentalService, violationService);
+        ConsoleUi consoleUI = new ConsoleUi(carService, customerService, rentalService, violationService);
         consoleUI.start();
     }
 }

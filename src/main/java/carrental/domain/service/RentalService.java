@@ -6,6 +6,11 @@ import carrental.domain.model.Customer;
 import carrental.domain.repository.RentalRepository;
 import carrental.domain.repository.CarRepository;
 import carrental.domain.repository.CustomerRepository;
+
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
+import java.time.temporal.ChronoUnit;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -22,38 +27,204 @@ public class RentalService {
         this.customerRepository = customerRepository;
     }
 
-    public Rental createRental(Integer customerId, Integer carId, Integer dateStart,
-                               Integer dateEnd, Integer costFact, String depositeStatus) {
-        Optional<Customer> customer = customerRepository.findById(customerId);
-        Optional<Car> car = carRepository.findById(carId);
-
-        if (customer.isEmpty() || car.isEmpty()) {
-            throw new IllegalArgumentException("Customer or car not found");
+    public Rental createRental(Integer customerId, Integer carId, String dateStart,
+                               String dateEnd, Integer costFact, String depositeStatus) {
+        // Validation
+        if (customerId == null || customerId <= 0) {
+            throw new IllegalArgumentException("Valid customer ID is required");
         }
 
+        if (carId == null || carId <= 0) {
+            throw new IllegalArgumentException("Valid car ID is required");
+        }
+
+        if (!isValidDate(dateStart) || !isValidDate(dateEnd)) {
+            throw new IllegalArgumentException("Invalid date format. Use YYYY-MM-DD");
+        }
+
+        if (costFact == null || costFact <= 0) {
+            throw new IllegalArgumentException("Cost must be positive");
+        }
+
+        if (depositeStatus == null || depositeStatus.trim().isEmpty()) {
+            throw new IllegalArgumentException("Deposit status is required");
+        }
+
+        // Check date logic
+        try {
+            LocalDate start = LocalDate.parse(dateStart);
+            LocalDate end = LocalDate.parse(dateEnd);
+            if (end.isBefore(start) || end.isEqual(start)) {
+                throw new IllegalArgumentException("End date must be after start date");
+            }
+        } catch (DateTimeParseException e) {
+            throw new IllegalArgumentException("Invalid date format. Use YYYY-MM-DD");
+        }
+
+        // Business rule: Check if customer exists
+        Optional<Customer> customer = customerRepository.findById(customerId);
+        if (!customer.isPresent()) {
+            throw new IllegalArgumentException("Customer not found with ID: " + customerId);
+        }
+
+        // Business rule: Check if car exists and is available
+        Optional<Car> car = carRepository.findById(carId);
+        if (!car.isPresent()) {
+            throw new IllegalArgumentException("Car not found with ID: " + carId);
+        }
+
+        if (!"AVAILABLE".equals(car.get().getStatus())) {
+            throw new IllegalStateException("Car is not available for rental. Current status: " + car.get().getStatus());
+        }
+
+        // Business rule: Check if car is currently rented
+        if (rentalRepository.isCarCurrentlyRented(carId)) {
+            throw new IllegalStateException("Car is currently rented");
+        }
+
+        // Business rule: Check if customer can rent
+        if (!canCustomerRent(customerId)) {
+            throw new IllegalStateException("Customer is not eligible to rent a car");
+        }
+
+        // Create rental
         Rental rental = new Rental(null, customerId, carId, dateStart, dateEnd,
                 costFact, depositeStatus, "ACTIVE");
-        return rentalRepository.save(rental);
+
+        Rental savedRental = rentalRepository.save(rental);
+
+        // Update car status to RENTED
+        carRepository.updateStatus(carId, "RENTED");
+
+        return savedRental;
     }
 
-    public List<Rental> getCustomerRentals(Integer customerId) {
-        return rentalRepository.findByCustomerId(customerId);
+    public Optional<Rental> getRental(Integer id) {
+        if (id == null || id <= 0) {
+            throw new IllegalArgumentException("Invalid rental ID");
+        }
+        return rentalRepository.findById(id);
     }
 
     public List<Rental> getAllRentals() {
         return rentalRepository.findAll();
     }
 
+    public List<Rental> getCustomerRentals(Integer customerId) {
+        if (customerId == null || customerId <= 0) {
+            throw new IllegalArgumentException("Invalid customer ID");
+        }
+        return rentalRepository.findByCustomerId(customerId);
+    }
+
+    public List<Rental> getCarRentals(Integer carId) {
+        if (carId == null || carId <= 0) {
+            throw new IllegalArgumentException("Invalid car ID");
+        }
+        return rentalRepository.findByCarId(carId);
+    }
+
     public boolean completeRental(Integer rentalId) {
+        if (rentalId == null || rentalId <= 0) {
+            throw new IllegalArgumentException("Invalid rental ID");
+        }
+
         Optional<Rental> rental = rentalRepository.findById(rentalId);
         if (rental.isPresent()) {
-            Rental updatedRental = new Rental(rentalId, rental.get().getCustomerId(),
-                    rental.get().getCarId(), rental.get().getDateStart(),
-                    rental.get().getDateEnd(), rental.get().getCostFact(),
-                    rental.get().getDepositeStatus(), "COMPLETED");
-            rentalRepository.save(updatedRental);
-            return true;
+            // Update rental status to COMPLETED
+            boolean rentalUpdated = rentalRepository.updateStatus(rentalId, "COMPLETED");
+
+            if (rentalUpdated) {
+                // Make car available again
+                carRepository.updateStatus(rental.get().getCarId(), "AVAILABLE");
+                return true;
+            }
         }
         return false;
+    }
+
+    public List<Rental> getActiveRentals() {
+        return rentalRepository.findActiveRentals();
+    }
+
+    public List<Rental> getCompletedRentals() {
+        return rentalRepository.findCompletedRentals();
+    }
+
+    public boolean updateDepositStatus(Integer rentalId, String depositStatus) {
+        if (rentalId == null || rentalId <= 0) {
+            throw new IllegalArgumentException("Invalid rental ID");
+        }
+
+        if (depositStatus == null || depositStatus.trim().isEmpty()) {
+            throw new IllegalArgumentException("Deposit status is required");
+        }
+
+        List<String> validStatuses = Arrays.asList("PAID", "REFUNDED", "PENDING");
+        if (!validStatuses.contains(depositStatus.toUpperCase())) {
+            throw new IllegalArgumentException("Invalid deposit status. Must be: PAID, REFUNDED, or PENDING");
+        }
+
+        return rentalRepository.updateDepositStatus(rentalId, depositStatus);
+    }
+
+    private boolean canCustomerRent(Integer customerId) {
+        Optional<Customer> customer = customerRepository.findById(customerId);
+        if (!customer.isPresent()) {
+            return false;
+        }
+
+        // Business rule: Check if customer has too many active rentals (limit to 2)
+        List<Rental> activeRentals = rentalRepository.findByCustomerIdAndStatus(customerId, "ACTIVE");
+        if (activeRentals.size() >= 2) {
+            return false;
+        }
+
+        // Additional business rules could be added here:
+        // - Check for unpaid violations
+        // - Check rental history for bad behavior
+        // - Verify customer's driver license validity
+
+        return true;
+    }
+
+    public int calculateRentalDuration(Integer rentalId) {
+        if (rentalId == null || rentalId <= 0) {
+            throw new IllegalArgumentException("Invalid rental ID");
+        }
+
+        Optional<Rental> rental = rentalRepository.findById(rentalId);
+        if (rental.isPresent()) {
+            String startDate = rental.get().getDateStart();
+            String endDate = rental.get().getDateEnd();
+
+            try {
+                LocalDate start = LocalDate.parse(startDate);
+                LocalDate end = LocalDate.parse(endDate);
+                return (int) ChronoUnit.DAYS.between(start, end);
+            } catch (DateTimeParseException e) {
+                throw new IllegalArgumentException("Invalid date format in rental: " + rentalId);
+            }
+        }
+
+        throw new IllegalArgumentException("Rental not found with ID: " + rentalId);
+    }
+
+    public boolean isCarAvailableForRental(Integer carId) {
+        if (carId == null || carId <= 0) {
+            throw new IllegalArgumentException("Invalid car ID");
+        }
+
+        Optional<Car> car = carRepository.findById(carId);
+        if (!car.isPresent()) {
+            return false;
+        }
+
+        return "AVAILABLE".equals(car.get().getStatus()) &&
+                !rentalRepository.isCarCurrentlyRented(carId);
+    }
+
+    private boolean isValidDate(String date) {
+        return date != null && date.matches("\\d{4}-\\d{2}-\\d{2}");
     }
 }

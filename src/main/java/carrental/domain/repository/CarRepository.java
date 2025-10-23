@@ -1,6 +1,7 @@
 package carrental.domain.repository;
 
 import carrental.domain.model.Car;
+
 import java.util.List;
 import java.util.Optional;
 
@@ -11,4 +12,7 @@ public interface CarRepository {
     void delete(Integer id);
     Optional<Car> findByVin(String vin);
     List<Car> findByStatus(String status);
+    List<Car> findByBrand(String brand);
+    boolean existsByVin(String vin);
+    boolean updateStatus(Integer carId, String status);
 }

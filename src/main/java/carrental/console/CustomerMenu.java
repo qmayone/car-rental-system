@@ -17,15 +17,7 @@ public class CustomerMenu {
 
     public void showMenu() {
         while (true) {
-            MenuHelper.displaySectionHeader("CUSTOMER MANAGEMENT");
-            System.out.println("1.  Add New Customer");
-            System.out.println("2.  View All Customers");
-            System.out.println("3.  Find Customer by ID");
-            System.out.println("4.  Find Customer by Driver License");
-            System.out.println("5.  Delete Customer");
-            System.out.println("0.  Back to Main Menu");
-            System.out.print("\nChoose an option: ");
-
+            displayCustomerMenu();
             String choice = scanner.nextLine().trim();
 
             switch (choice) {
@@ -47,100 +39,146 @@ public class CustomerMenu {
                 case "0":
                     return;
                 default:
-                    System.out.println(" Invalid choice. Please try again.");
-                    MenuHelper.pressEnterToContinue(scanner);
+                    System.out.println("Invalid choice. Please try again.");
+                    pressEnterToContinue();
             }
         }
     }
 
+    private void displayCustomerMenu() {
+        System.out.println("\n--- CUSTOMER MANAGEMENT ---");
+        System.out.println("1. Add New Customer");
+        System.out.println("2. View All Customers");
+        System.out.println("3. Find Customer by ID");
+        System.out.println("4. Find Customer by Driver License");
+        System.out.println("5. Delete Customer");
+        System.out.println("0. Back to Main Menu");
+        System.out.print("Choose an option: ");
+    }
+
     private void addCustomer() {
         try {
-            MenuHelper.displaySubHeader("ADD NEW CUSTOMER");
+            System.out.println("\n--- ADD NEW CUSTOMER ---");
 
-            String fullName = MenuHelper.readRequiredString(scanner, "Enter Full Name: ");
-            long passport = MenuHelper.readLongInput(scanner, "Enter Passport Number: ");
-            long driverLicense = MenuHelper.readLongInput(scanner, "Enter Driver License Number: ");
-            long phone = MenuHelper.readLongInput(scanner, "Enter Phone Number: ");
-            String address = MenuHelper.readRequiredString(scanner, "Enter Address: ");
+            System.out.print("Enter Full Name: ");
+            String fullName = scanner.nextLine();
+
+            System.out.print("Enter Passport Number: ");
+            long passport = Long.parseLong(scanner.nextLine());
+
+            System.out.print("Enter Driver License Number: ");
+            long driverLicense = Long.parseLong(scanner.nextLine());
+
+            System.out.print("Enter Phone Number: ");
+            long phone = Long.parseLong(scanner.nextLine());
+
+            System.out.print("Enter Address: ");
+            String address = scanner.nextLine();
 
             Customer customer = customerService.addCustomer(fullName, passport, driverLicense, phone, address);
-            System.out.println(" Customer added successfully with ID: " + customer.getCustomerId());
+            System.out.println("Customer added successfully with ID: " + customer.getCustomerId());
 
         } catch (Exception e) {
-            System.out.println(" Error adding customer: " + e.getMessage());
+            System.out.println("Error adding customer: " + e.getMessage());
         } finally {
-            MenuHelper.pressEnterToContinue(scanner);
+            pressEnterToContinue();
         }
     }
 
     private void viewAllCustomers() {
-        MenuHelper.displaySubHeader("ALL CUSTOMERS");
+        System.out.println("\n--- ALL CUSTOMERS ---");
         List<Customer> customers = customerService.getAllCustomers();
 
         if (customers.isEmpty()) {
             System.out.println("No customers found in the system.");
         } else {
-            System.out.printf("%-4s %-20s %-15s %-15s %-12s%n",
-                    "ID", "Name", "Driver License", "Phone", "Address");
-            System.out.println("-".repeat(80));
+            System.out.println("ID | Name | Driver License | Phone | Address");
+            System.out.println("--------------------------------------------");
 
             for (Customer customer : customers) {
-                String shortAddress = customer.getAddress().length() > 15 ?
-                        customer.getAddress().substring(0, 12) + "..." : customer.getAddress();
-
-                System.out.printf("%-4d %-20s %-15d %-15d %-12s%n",
+                System.out.printf("%-3d | %-20s | %-15d | %-15d | %s%n",
                         customer.getCustomerId(),
-                        customer.getFullName().length() > 20 ?
-                                customer.getFullName().substring(0, 17) + "..." : customer.getFullName(),
+                        truncateString(customer.getFullName(), 20),
                         customer.getDriverLicense(),
                         customer.getPhone(),
-                        shortAddress);
+                        truncateString(customer.getAddress(), 20));
             }
         }
-        MenuHelper.pressEnterToContinue(scanner);
+        pressEnterToContinue();
     }
 
     private void findCustomerById() {
-        MenuHelper.displaySubHeader("FIND CUSTOMER BY ID");
-        int id = MenuHelper.readIntInput(scanner, "Enter Customer ID: ");
+        System.out.println("\n--- FIND CUSTOMER BY ID ---");
+        System.out.print("Enter Customer ID: ");
 
-        customerService.getCustomer(id).ifPresentOrElse(
-                this::displayCustomerDetails,
-                () -> System.out.println(" Customer not found with ID: " + id)
-        );
-        MenuHelper.pressEnterToContinue(scanner);
+        try {
+            int id = Integer.parseInt(scanner.nextLine());
+            Customer customer = customerService.getCustomer(id).orElse(null);
+            if (customer != null) {
+                displayCustomerDetails(customer);
+            } else {
+                System.out.println("Customer not found with ID: " + id);
+            }
+        } catch (NumberFormatException e) {
+            System.out.println("Invalid ID format.");
+        }
+        pressEnterToContinue();
     }
 
     private void findCustomerByDriverLicense() {
-        MenuHelper.displaySubHeader("FIND CUSTOMER BY DRIVER LICENSE");
-        long driverLicense = MenuHelper.readLongInput(scanner, "Enter Driver License Number: ");
+        System.out.println("\n--- FIND CUSTOMER BY DRIVER LICENSE ---");
+        System.out.print("Enter Driver License Number: ");
 
-        customerService.getCustomerByDriverLicense(driverLicense).ifPresentOrElse(
-                this::displayCustomerDetails,
-                () -> System.out.println(" Customer not found with driver license: " + driverLicense)
-        );
-        MenuHelper.pressEnterToContinue(scanner);
+        try {
+            long driverLicense = Long.parseLong(scanner.nextLine());
+            Customer customer = customerService.getCustomerByDriverLicense(driverLicense).orElse(null);
+            if (customer != null) {
+                displayCustomerDetails(customer);
+            } else {
+                System.out.println("Customer not found with driver license: " + driverLicense);
+            }
+        } catch (NumberFormatException e) {
+            System.out.println("Invalid license number format.");
+        }
+        pressEnterToContinue();
     }
 
     private void deleteCustomer() {
-        MenuHelper.displaySubHeader("DELETE CUSTOMER");
-        int id = MenuHelper.readIntInput(scanner, "Enter Customer ID to delete: ");
+        System.out.println("\n--- DELETE CUSTOMER ---");
+        System.out.print("Enter Customer ID to delete: ");
 
-        if (customerService.deleteCustomer(id)) {
-            System.out.println(" Customer deleted successfully.");
-        } else {
-            System.out.println(" Customer not found with ID: " + id);
+        try {
+            int id = Integer.parseInt(scanner.nextLine());
+            if (customerService.deleteCustomer(id)) {
+                System.out.println("Customer deleted successfully.");
+            } else {
+                System.out.println("Customer not found with ID: " + id);
+            }
+        } catch (NumberFormatException e) {
+            System.out.println("Invalid ID format.");
         }
-        MenuHelper.pressEnterToContinue(scanner);
+        pressEnterToContinue();
     }
 
     private void displayCustomerDetails(Customer customer) {
-        System.out.println("\n👤 Customer Details:");
+        System.out.println("\nCustomer Details:");
         System.out.println("  ID: " + customer.getCustomerId());
         System.out.println("  Full Name: " + customer.getFullName());
         System.out.println("  Passport: " + customer.getPassport());
         System.out.println("  Driver License: " + customer.getDriverLicense());
         System.out.println("  Phone: " + customer.getPhone());
         System.out.println("  Address: " + customer.getAddress());
+    }
+
+    private String truncateString(String str, int maxLength) {
+        if (str.length() <= maxLength) {
+            return str;
+        }
+        return str.substring(0, maxLength - 3) + "...";
+    }
+
+    private void pressEnterToContinue() {
+        System.out.print("Press Enter to continue...");
+        scanner.nextLine();
     }
 }

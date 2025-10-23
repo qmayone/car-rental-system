@@ -1,6 +1,7 @@
 package carrental.domain.repository;
 
 import carrental.domain.model.Customer;
+
 import java.util.List;
 import java.util.Optional;
 
@@ -10,4 +11,9 @@ public interface CustomerRepository {
     List<Customer> findAll();
     void delete(Integer id);
     Optional<Customer> findByDriverLicense(Long driverLicense);
+    Optional<Customer> findByPassport(Long passport);
+    Optional<Customer> findByPhone(Long phone);
+    boolean existsByDriverLicense(Long driverLicense);
+    boolean existsByPassport(Long passport);
+    List<Customer> findByNameContaining(String name);
 }

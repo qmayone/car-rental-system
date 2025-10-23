@@ -4,14 +4,14 @@ public class Rental {
     private final Integer rentalId;
     private final Integer customerId;
     private final Integer carId;
-    private final Integer dateStart;
-    private final Integer dateEnd;
+    private final String dateStart;
+    private final String dateEnd;
     private final Integer costFact;
     private final String depositeStatus;
     private final String status;
 
     public Rental(Integer rentalId, Integer customerId, Integer carId,
-                  Integer dateStart, Integer dateEnd, Integer costFact,
+                  String dateStart, String dateEnd, Integer costFact,
                   String depositeStatus, String status) {
         this.rentalId = rentalId;
         this.customerId = customerId;
@@ -27,8 +27,8 @@ public class Rental {
     public Integer getRentalId() { return rentalId; }
     public Integer getCustomerId() { return customerId; }
     public Integer getCarId() { return carId; }
-    public Integer getDateStart() { return dateStart; }
-    public Integer getDateEnd() { return dateEnd; }
+    public String getDateStart() { return dateStart; }
+    public String getDateEnd() { return dateEnd; }
     public Integer getCostFact() { return costFact; }
     public String getDepositeStatus() { return depositeStatus; }
     public String getStatus() { return status; }
