@@ -170,9 +170,6 @@ public class InMemoryViolationRepository implements ViolationRepository {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Gets the total revenue from paid fines
-     */
     public Integer getTotalRevenueFromFines() {
         return storage.values().stream()
                 .filter(violation -> "PAID".equalsIgnoreCase(violation.getStatus()))

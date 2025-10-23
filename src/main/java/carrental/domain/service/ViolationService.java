@@ -23,7 +23,6 @@ public class ViolationService {
 
     public Violation recordViolation(Integer rentalId, String dateTime,
                                      String description, Integer fineAmount, String status) {
-        // Validation
         if (rentalId == null || rentalId <= 0) {
             throw new IllegalArgumentException("Valid rental ID is required");
         }
@@ -44,13 +43,11 @@ public class ViolationService {
             throw new IllegalArgumentException("Status is required");
         }
 
-        // Business rule: Check if rental exists
         Optional<Rental> rental = rentalRepository.findById(rentalId);
         if (!rental.isPresent()) {
             throw new IllegalArgumentException("Rental not found with ID: " + rentalId);
         }
 
-        // Validate status
         List<String> validStatuses = Arrays.asList("PENDING", "PAID", "RESOLVED");
         if (!validStatuses.contains(status.toUpperCase())) {
             throw new IllegalArgumentException("Invalid status. Must be: PENDING, PAID, or RESOLVED");

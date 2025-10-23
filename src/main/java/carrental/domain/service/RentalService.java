@@ -29,7 +29,7 @@ public class RentalService {
 
     public Rental createRental(Integer customerId, Integer carId, String dateStart,
                                String dateEnd, Integer costFact, String depositeStatus) {
-        // Validation
+
         if (customerId == null || customerId <= 0) {
             throw new IllegalArgumentException("Valid customer ID is required");
         }
@@ -50,7 +50,6 @@ public class RentalService {
             throw new IllegalArgumentException("Deposit status is required");
         }
 
-        // Check date logic
         try {
             LocalDate start = LocalDate.parse(dateStart);
             LocalDate end = LocalDate.parse(dateEnd);
@@ -61,13 +60,11 @@ public class RentalService {
             throw new IllegalArgumentException("Invalid date format. Use YYYY-MM-DD");
         }
 
-        // Business rule: Check if customer exists
         Optional<Customer> customer = customerRepository.findById(customerId);
         if (!customer.isPresent()) {
             throw new IllegalArgumentException("Customer not found with ID: " + customerId);
         }
 
-        // Business rule: Check if car exists and is available
         Optional<Car> car = carRepository.findById(carId);
         if (!car.isPresent()) {
             throw new IllegalArgumentException("Car not found with ID: " + carId);
@@ -77,23 +74,19 @@ public class RentalService {
             throw new IllegalStateException("Car is not available for rental. Current status: " + car.get().getStatus());
         }
 
-        // Business rule: Check if car is currently rented
         if (rentalRepository.isCarCurrentlyRented(carId)) {
             throw new IllegalStateException("Car is currently rented");
         }
 
-        // Business rule: Check if customer can rent
         if (!canCustomerRent(customerId)) {
             throw new IllegalStateException("Customer is not eligible to rent a car");
         }
 
-        // Create rental
         Rental rental = new Rental(null, customerId, carId, dateStart, dateEnd,
                 costFact, depositeStatus, "ACTIVE");
 
         Rental savedRental = rentalRepository.save(rental);
 
-        // Update car status to RENTED
         carRepository.updateStatus(carId, "RENTED");
 
         return savedRental;
@@ -131,11 +124,9 @@ public class RentalService {
 
         Optional<Rental> rental = rentalRepository.findById(rentalId);
         if (rental.isPresent()) {
-            // Update rental status to COMPLETED
             boolean rentalUpdated = rentalRepository.updateStatus(rentalId, "COMPLETED");
 
             if (rentalUpdated) {
-                // Make car available again
                 carRepository.updateStatus(rental.get().getCarId(), "AVAILABLE");
                 return true;
             }
@@ -174,16 +165,10 @@ public class RentalService {
             return false;
         }
 
-        // Business rule: Check if customer has too many active rentals (limit to 2)
         List<Rental> activeRentals = rentalRepository.findByCustomerIdAndStatus(customerId, "ACTIVE");
         if (activeRentals.size() >= 2) {
             return false;
         }
-
-        // Additional business rules could be added here:
-        // - Check for unpaid violations
-        // - Check rental history for bad behavior
-        // - Verify customer's driver license validity
 
         return true;
     }

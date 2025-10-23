@@ -15,7 +15,6 @@ public class InMemoryCarRepository implements CarRepository {
     @Override
     public Car save(Car car) {
         if (car.getCarId() == null) {
-            // New car - generate ID
             Car newCar = new Car(
                     idCounter.getAndIncrement(),
                     car.getVin(),
@@ -28,7 +27,6 @@ public class InMemoryCarRepository implements CarRepository {
             storage.put(newCar.getCarId(), newCar);
             return newCar;
         } else {
-            // Existing car - update
             storage.put(car.getCarId(), car);
             return car;
         }

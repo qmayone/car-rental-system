@@ -7,19 +7,16 @@ import carrental.console.ConsoleUi;
 
 public class ConsoleApplication {
     public static void main(String[] args) {
-        // Initialize repositories
         CarRepository carRepository = new InMemoryCarRepository();
         CustomerRepository customerRepository = new InMemoryCustomerRepository();
         RentalRepository rentalRepository = new InMemoryRentalRepository();
         ViolationRepository violationRepository = new InMemoryViolationRepository();
 
-        // Initialize services
         CarServise carService = new CarServise(carRepository);
         CustomerService customerService = new CustomerService(customerRepository);
         RentalService rentalService = new RentalService(rentalRepository, carRepository, customerRepository);
         ViolationService violationService = new ViolationService(violationRepository, rentalRepository);
 
-        // Initialize and start UI
         ConsoleUi consoleUI = new ConsoleUi(carService, customerService, rentalService, violationService);
         consoleUI.start();
     }

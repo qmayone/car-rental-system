@@ -15,7 +15,6 @@ public class CustomerService {
 
     public Customer addCustomer(String fullName, Long passport, Long driverLicense,
                                 Long phone, String address) {
-        // Validation
         if (fullName == null || fullName.trim().isEmpty()) {
             throw new IllegalArgumentException("Full name is required");
         }
@@ -87,8 +86,6 @@ public class CustomerService {
 
         Optional<Customer> customer = customerRepository.findById(id);
         if (customer.isPresent()) {
-            // Business rule: Check if customer has active rentals (would need rental service)
-            // For now, we'll allow deletion but in real system we'd check this
             customerRepository.delete(id);
             return true;
         }
